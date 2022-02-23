@@ -47,6 +47,10 @@ public class GMScript : MonoBehaviour
     private Vector3Int[] PIECE_I;
     private Vector3Int[][] PIECES; 
 
+    private int pieceCount = 0;
+
+    bool slowmode = false;
+
     // ReSharper disable once InconsistentNaming
     private int wx2bx(int wx)
     {
@@ -73,6 +77,29 @@ public class GMScript : MonoBehaviour
         InitializePieces();
     }
 
+    private void CheckSlowmode() {
+        if (PlayerPrefs.HasKey("Last3")) {
+            string[] l3 = PlayerPrefs.GetString("Last3").Split(" ");
+            Debug.Log($"Last three log: {l3[0]}, {l3[1]}, {l3[2]}");
+            if (int.Parse(l3[0]) < 100 && int.Parse(l3[1]) < 100 && int.Parse(l3[2]) < 100) {
+                slowmode = true;
+                _fixedUpdateFramesToWait = 20;
+                Debug.Log("triggering slowmode");
+            }
+        } else {
+            PlayerPrefs.SetString("Last3", "100 100 100");
+            PlayerPrefs.Save();
+        }
+    }
+
+    private void SaveGamePerformance() {
+        string[] l3 = PlayerPrefs.GetString("Last3").Split(" ");
+        l3[2] = l3[1];
+        l3[1] = l3[0];
+        l3[0] = pieceCount.ToString();
+        PlayerPrefs.SetString("Last3", $"{l3[0]} {l3[1]} {l3[2]}");
+        PlayerPrefs.Save();
+    }
 
     bool MakeNewPiece(int midX, int maxY)
     {
@@ -85,6 +112,7 @@ public class GMScript : MonoBehaviour
             _myPiece[i].x = targetPiece[i].x + midX;
             _myPiece[i].y = targetPiece[i].y + maxY;
         }
+        pieceCount++;
         return ValidPiece();
     }
     
@@ -117,6 +145,8 @@ public class GMScript : MonoBehaviour
 
         BlankBaseBoard();
         Debug.Log($"BOARD SIZE = {(1 + _maxBx - _minBx)} x {(1 + _maxBy - _minBy)}");
+
+        CheckSlowmode();
     }
 
     bool KillRow(int row)
@@ -323,7 +353,7 @@ public class GMScript : MonoBehaviour
         if (CheckKillChunk())
         {
             _inARow++;
-            MakeRandomAngryChunk();
+            if (!slowmode) MakeRandomAngryChunk();
         }
         else _inARow = 0;
         infoText.text = $"PTS:{_score}\n\nMAX:{_difficulty}\n\nCURRIC\n576";
@@ -339,8 +369,10 @@ public class GMScript : MonoBehaviour
             if (!MakeNewPiece(0,_maxBy))
             {   
                 Debug.Log("NO VALID MOVE");
+                SaveGamePerformance();
                 Debug.Break();
-            }
+            } else
+                pieceCount++;
         }
         
         
