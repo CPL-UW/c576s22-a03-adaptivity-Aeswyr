@@ -8,3 +8,6 @@
 Apologies for the mess. YMMV.
 
 test commit to readme
+
+CHANGES:
+Completing a line uses the AddAngryChunk logic from the adaptibility assignment in order to add a random chunk to the opponent's board.
